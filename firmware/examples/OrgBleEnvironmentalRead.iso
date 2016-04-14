@@ -1,0 +1,270 @@
+/*"name": "OrganicityTH2.ino",
+Author: "LPFraile <lidiapf0@gmail.com>",
+License: "BSD",
+Version: "0.0.1",
+Description: "Connect your Blend devices with Organicity and send your temperature and humidity values"
+File: source file
+*/
+
+#include <SPI.h>
+#include <boards.h>
+#include <RBL_nRF8001.h>
+#include "Arduino.h"
+#include "Wire.h" 
+#include <BleOrgLib.h>
+
+
+
+//////////////////YOUR CODE/////////////////////
+///dust sensor
+int dust_pin10 =0;//Particles between 0 to 10μm
+int dust_pin25 =1;//Particles between 2.5μm to 10μm 
+
+unsigned long duration10;
+unsigned long duration25;
+unsigned long starttime;
+unsigned long sampletime_ms = 30000;//sampe 30s ;
+unsigned long lowpulseoccupancy10 = 0;
+unsigned long lowpulseoccupancy25 = 0;
+float sam=300000.0;
+float ratio10 = 0;
+float ratio25 = 0;
+float concentration10 = 0;
+float concentration25 = 0;
+float count10=0;
+float count=0;
+float count25=0;
+unsigned long duration=0;
+unsigned long duration2=0;
+unsigned long triggerOn25;
+unsigned long triggerOn10;
+unsigned long triggerOff25;
+unsigned long triggerOff10;
+
+boolean value25 = HIGH;
+boolean value10 = HIGH;
+boolean trigger25 = false;
+boolean trigger10 = false;
+
+//Temperature-Humidity sensor library
+#include <TH02_dev.h>
+//gas
+#include <MutichannelGasSensor.h>
+
+int num_var=14;
+//Name of the Variables to send to Organicity
+String variables_name[15]={"temperature","humidity","NH3","CO","NO2","C3H8","C4H10","CH4","H2","C2H5OH","1PM","25PM","1PMc","25PMc"};
+//Array of float values to be send to Organicity
+float variables_value[15];
+//Select a name to identify that start obligatory with Blend and has a maximum of 10 charcters
+char* device_name="Blend5";
+//Include your code that will be initialize on the setup() 
+void sensorSetup()
+{
+   Serial.begin(9600);  // start serial for output
+    Serial.println("power on!");
+  /* Reset HP20x_dev */
+    TH02.begin(4);
+   mutichannelGasSensor.begin(0x04);   
+    //Dust sensor setup
+  pinMode(dust_pin10,INPUT_PULLUP);
+  pinMode(dust_pin25,INPUT_PULLUP);
+  attachInterrupt(3, intrLOPM25, CHANGE);
+  attachInterrupt(2, intrLOPM10, CHANGE);
+    starttime = millis();//get the current time;
+   // For BLE Shield and Blend:
+  //   Default pins set to 9 and 8 for REQN and RDYN
+  //   Set your REQN and RDYN here before ble_begin() if you need
+  //   Need to set the REQN and RDYN pins //
+  // For Blend Micro:
+  //   Default pins set to 6 and 7 for REQN and RDYN
+  //   So, no need to set for Blend Micro.
+  ble_set_pins(6, 7);
+}
+//Include your code that will be call in every loop
+void sensorLoop()
+{
+   TH02.PowerOn();
+    //Serial.println("read temp");
+    delay(150);
+    // Temperature sensor
+    float temperature = TH02.ReadTemperature(); 
+    // Serial.println("Temperature: ");   
+    // Serial.print(temperature);
+    //Give the float value of the variable that want to be send to the specific position of the variables_value[] array
+    variables_value[0]= temperature;
+    //Humidity
+    float humidity = TH02.ReadHumidity();
+    //Serial.println("Humidity: ");
+    //Serial.print(humidity);
+    //Give the float value of the variable that want to be send to the specific position of the variables_value[] array
+    variables_value[1]=humidity;
+    TH02.PowerOff();
+    delay (150);
+    
+    mutichannelGasSensor.powerOn();
+    delay(150);
+    
+        float c;
+//Serial.println("read gas");
+    c = mutichannelGasSensor.measure_NH3();
+    if(c>=0)
+    variables_value[2]= c;
+    else variables_value[2]= c;
+
+    c = mutichannelGasSensor.measure_CO();
+    if(c>=0)
+    variables_value[3]= c;
+    else variables_value[3]= c;
+
+
+    c = mutichannelGasSensor.measure_NO2();
+    if(c>=0)
+    variables_value[4]= c;
+    else variables_value[4]= c;
+
+    c = mutichannelGasSensor.measure_C3H8();
+    if(c>=0)
+    variables_value[5]= c;
+    else variables_value[5]= c;
+
+
+    c = mutichannelGasSensor.measure_C4H10();
+    if(c>=0)
+    variables_value[6]= c;
+    else variables_value[6]= c;
+
+
+    c = mutichannelGasSensor.measure_CH4();
+    if(c>=0)
+    variables_value[7]= c;
+    else variables_value[7]= c;
+
+
+    c = mutichannelGasSensor.measure_H2();
+    if(c>=0)
+    variables_value[8]= c;
+    else variables_value[8]= c;
+
+
+    c = mutichannelGasSensor.measure_C2H5OH();
+    if(c>=0)
+    variables_value[9]= c;
+    else variables_value[9]= c;
+
+    mutichannelGasSensor.powerOff();
+    delay (150);
+    
+    //dust 
+    
+    if ((millis()-starttime) > sampletime_ms)//if the sampel time == 30s
+    {
+        ratio25 = lowpulseoccupancy25/(sam);  // Integer percentage 0=>100
+        count = 1.1*pow(ratio25,3)-3.8*pow(ratio25,2)+520*ratio25+0.62; // using spec sheet curve     
+        ratio10 = lowpulseoccupancy10/(sam);  // Integer percentage 0=>100
+        count10 = 1.1*pow(ratio10,3)-3.8*pow(ratio10,2)+520*ratio10+0.62; // using spec sheet curve
+        count25 = count10-count;      
+       
+        // Begin mass concentration calculation
+       // float concentration[] = {0, 0};
+        double pi = 3.14159;
+        double density = 1.65 * pow(10, 12);
+        double K = 3531.5;
+        
+        // PM10
+        double r10 = 2.6 * pow(10, -6);
+        double vol10 = (4 / 3) * pi * pow(r10, 3);
+        double mass10 = density * vol10;
+        concentration10 = (count10) * K * mass10;
+        
+        // PM2.5
+        double r25 = 0.44 * pow(10, -6);
+        double vol25 = (4 / 3) * pi * pow(r25, 3);
+        double mass25 = density * vol25;
+        concentration25 = (count25) * K * mass25;
+        Serial.print("LP10 = ");
+      Serial.println(lowpulseoccupancy10);
+   
+        Serial.print("LP25 = ");
+          Serial.println(lowpulseoccupancy25);
+ 
+ 
+   // float v=2.5342;
+     Serial.print("10PMcount = ");
+  Serial.print(count10);
+  
+  Serial.print("25PMcount = ");
+  Serial.println(count25);
+  
+  Serial.print("10PM = ");
+  Serial.println(concentration10);
+   
+   Serial.print("25PM = ");
+  Serial.println(concentration25);  
+      
+ 
+      // Resetting for next sampling
+        lowpulseoccupancy25 = 0;
+        lowpulseoccupancy10 = 0;
+        starttime = millis();
+        
+    }
+         variables_value[10]=concentration10;
+         variables_value[11]=concentration25;
+         variables_value[12]=count10;
+         variables_value[13]=count25;
+    
+}
+//If you need reset any variable of you program later of have been send data to Organicity make it on this function
+void sensorReset()
+{
+        lowpulseoccupancy25 = 0;
+        lowpulseoccupancy10 = 0;
+}
+///////////////////UNTIL HERE YOUR CODE////////////////////
+
+BleOrgLib* device=new BleOrgLib();
+
+void setup()
+{  
+  device->orgSetup();
+}
+
+void loop()
+{
+  device->orgRun();
+}
+
+//my interruption programs
+
+void intrLOPM25() {
+  value25 = digitalRead(dust_pin25);
+  if (value25 == LOW && trigger25 == false) {
+    Serial.print("Here");
+    trigger25 = true;
+    triggerOn25 = micros();
+  }
+  if (value25 == HIGH && trigger25 == true) {
+    triggerOff25 = micros();
+    lowpulseoccupancy25 += (triggerOff25 - triggerOn25);
+    trigger25 = false;
+    Serial.print("low pusle25:");
+    Serial.println(lowpulseoccupancy25);
+  }
+}
+
+void intrLOPM10() {
+  value10 = digitalRead(dust_pin10);
+  if (value10 == LOW && trigger10 == false) {
+    trigger10 = true;
+    triggerOn10 = micros();
+  }
+  if (value10 == HIGH && trigger10 == true) {
+    triggerOff10 = micros();
+    lowpulseoccupancy10 += (triggerOff10 - triggerOn10);
+    trigger10 = false;
+    ;
+    Serial.print("low pusle10:");
+    Serial.println(lowpulseoccupancy10);
+  }
+}
