@@ -1,0 +1,77 @@
+/*"name": "OrganicityTH2.ino",
+Author: "LPFraile <lidiapf0@gmail.com>",
+License: "BSD",
+Version: "0.0.1",
+Description: "Connect your Blend devices with Organicity and send your temperature and humidity values"
+File: source file
+*/
+
+#include <SPI.h>
+#include <boards.h>
+#include <RBL_nRF8001.h>
+#include "Arduino.h"
+#include "Wire.h" 
+#include <BleOrgLib.h>
+////////////OBLIGATORY CODE/////////////////////
+int num_var=2;
+//Name of the Variables to send to Organicity
+String variables_name[10]={"temperature","humidity"};
+//Array of float values to be send to Organicity
+float variables_value[10];
+//Select a name to identify that start obligatory with Blend and has a maximum of 10 charcters
+char* device_name="Blend5";
+//Include your code that will be initialize on the setup() 
+
+//////////////////YOUR CODE/////////////////////
+
+//Temperature-Humidity sensor library
+#include <TH02_dev.h>
+
+
+void sensorSetup()
+{
+  /* Reset HP20x_dev */
+  TH02.begin();
+   // For BLE Shield and Blend:
+  //   Default pins set to 9 and 8 for REQN and RDYN
+  //   Set your REQN and RDYN here before ble_begin() if you need
+  //   Need to set the REQN and RDYN pins //
+  // For Blend Micro:
+  //   Default pins set to 6 and 7 for REQN and RDYN
+  //   So, no need to set for Blend Micro.
+  ble_set_pins(6, 7);
+}
+//Include your code that will be call in every loop
+void sensorLoop()
+{
+    // Temperature sensor
+    float temperature = TH02.ReadTemperature(); 
+    // Serial.println("Temperature: ");   
+    // Serial.print(temperature);
+    //Give the float value of the variable that want to be send to the specific position of the variables_value[] array
+    variables_value[0]= temperature;
+    //Humidity
+    float humidity = TH02.ReadHumidity();
+    //Serial.println("Humidity: ");
+    //Serial.print(humidity);
+    //Give the float value of the variable that want to be send to the specific position of the variables_value[] array
+    variables_value[1]=humidity;
+}
+//If you need reset any variable of you program later of have been send data to Organicity make it on this function
+void sensorReset()
+{
+  
+}
+///////////////////UNTIL HERE YOUR CODE////////////////////
+
+BleOrgLib* device=new BleOrgLib();
+
+void setup()
+{  
+  device->orgSetup();
+}
+
+void loop()
+{
+  device->orgRun();
+}
