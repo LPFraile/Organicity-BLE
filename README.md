@@ -72,3 +72,6 @@ void sensorReset()
   ////////////////////////////////////////////////////////////
 }
 ```
+OrgBleEnvironmentalRead device
+--
+This example inlcude THO2 Humidity&Temperature sensor,multichannel gas sensor and Dust sensor. Notice that need to be used the included it library for the THO2. Has been Include it method to Power on and off the sensor in order to can connect on the same I2C bus the multichannel gas sensor. 
