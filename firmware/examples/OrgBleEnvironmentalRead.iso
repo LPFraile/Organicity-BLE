@@ -110,47 +110,47 @@ void sensorLoop()
     c = mutichannelGasSensor.measure_NH3();
     if(c>=0)
     variables_value[2]= c;
-    else variables_value[2]= c;
+    else variables_value[2]= 0;
 
     c = mutichannelGasSensor.measure_CO();
     if(c>=0)
     variables_value[3]= c;
-    else variables_value[3]= c;
+    else variables_value[3]= 0;
 
 
     c = mutichannelGasSensor.measure_NO2();
     if(c>=0)
     variables_value[4]= c;
-    else variables_value[4]= c;
+    else variables_value[4]= 0;
 
     c = mutichannelGasSensor.measure_C3H8();
     if(c>=0)
     variables_value[5]= c;
-    else variables_value[5]= c;
+    else variables_value[5]= 0;
 
 
     c = mutichannelGasSensor.measure_C4H10();
     if(c>=0)
     variables_value[6]= c;
-    else variables_value[6]= c;
+    else variables_value[6]= 0;
 
 
     c = mutichannelGasSensor.measure_CH4();
     if(c>=0)
     variables_value[7]= c;
-    else variables_value[7]= c;
+    else variables_value[7]= 0;
 
 
     c = mutichannelGasSensor.measure_H2();
     if(c>=0)
     variables_value[8]= c;
-    else variables_value[8]= c;
+    else variables_value[8]= 0;
 
 
     c = mutichannelGasSensor.measure_C2H5OH();
     if(c>=0)
     variables_value[9]= c;
-    else variables_value[9]= c;
+    else variables_value[9]= 0;
 
     mutichannelGasSensor.powerOff();
     delay (150);
