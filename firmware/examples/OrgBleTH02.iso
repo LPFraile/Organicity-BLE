@@ -9,6 +9,7 @@ File: source file
 #include <SPI.h>
 #include <boards.h>
 #include <RBL_nRF8001.h>
+#include <EEPROM.h>
 #include "Arduino.h"
 #include "Wire.h" 
 #include <BleOrgLib.h>
