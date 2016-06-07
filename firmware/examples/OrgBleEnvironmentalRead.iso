@@ -2,7 +2,8 @@
 Author: "LPFraile <lidiapf0@gmail.com>",
 License: "BSD",
 Version: "0.0.1",
-Description: "Connect your Blend devices with Organicity and send your temperature and humidity values"
+Description: "Connect your Blend devices with Organicity and send your temperature, 
+humidity and diferent gases concetration ppm values"
 File: source file
 */
 
