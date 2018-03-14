@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merger version="3"><dataSet config="main"><source path="/home/lidia/AndroidStudioProjects/BlenMicroonone/app/src/main/assets"/><source path="/home/lidia/AndroidStudioProjects/BlenMicroonone/app/build/generated/assets/shaders/debug"/></dataSet><dataSet config="debug"><source path="/home/lidia/AndroidStudioProjects/BlenMicroonone/app/src/debug/assets"/></dataSet></merger>
